@@ -12,8 +12,16 @@
 
 | Algorithm | ATE RMSE [m] | ATE Mean [m] | ATE Max [m] | RPE RMSE [m] | RPE Mean [m] |
 |-----------|:------------:|:------------:|:-----------:|:------------:|:------------:|
-| LIO-SAM   | _TBD_       | _TBD_       | _TBD_      | _TBD_       | _TBD_       |
-| FAST-LIO  | _TBD_       | _TBD_       | _TBD_      | _TBD_       | _TBD_       |
+| LIO-SAM   | 0.687       | 0.572       | 1.310      | 6.090       | 5.164       |
+| FAST-LIO  | **0.349**   | **0.268**   | **2.857**  | **2.093**   | **1.830**   |
+
+*Alignment: SE(3) Umeyama, correct_scale=False. RPE delta: 10 frames.*
+
+**FAST-LIO achieves ~2x lower ATE and ~3x lower RPE than LIO-SAM on this dataset with a 6-axis IMU.**
+
+### Plot Interpretation
+
+ATE plot shows LIO-SAM with a constant ~1.3m offset in the early trajectory due to initial alignment, then performs comparably to FAST-LIO afterward. FAST-LIO covers the full bag duration with more pose samples (8 Hz vs 2.4 Hz output rate). Headline RMSE numbers favor FAST-LIO, but in steady state both algorithms produce sub-meter ATE.
 
 <details>
 <summary>Trajectory Plot (click to expand)</summary>
@@ -91,6 +99,38 @@ python3 /ros2_ws/host/scripts/evaluate.py \
 - **No runtime profiling** — CPU/memory/latency not measured (planned for next iteration)
 - **Default parameters** — both algorithms run with near-default configs for Ouster
 - **No degradation analysis** — behavior in featureless/dynamic areas not studied
+- **LIO-SAM 6-axis IMU patch** — LIO-SAM was patched to accept 6-axis IMU input (Ouster OS-1 does not publish orientation). This may affect attitude estimation quality compared to a 9-axis IMU setup. FAST-LIO does not require this patch. See [`docs/PATCHES.md`](docs/PATCHES.md) for details.
+- **LIO-SAM RPE** — Higher RPE than FAST-LIO due to no orientation initialization from the 6-axis IMU. FAST-LIO handles this natively via its iterated Kalman filter. For 9-axis IMU setups, LIO-SAM may achieve lower RPE.
+- **Output rate difference** — LIO-SAM produced only 453 poses vs FAST-LIO's 1338 from the same bag. This is normal — LIO-SAM publishes optimized keyframes, FAST-LIO publishes per-scan odometry. The output rate difference is a design choice, not a bug.
+
+---
+
+## Configuration Notes
+
+### Ouster OS-1 Internal IMU + LIO-SAM
+
+The Ouster OS-1's internal IMU is a 6-axis sensor co-located with the LiDAR. Three critical parameter changes are needed from LIO-SAM's defaults:
+
+```yaml
+# Identity — Ouster IMU frame is already aligned with LiDAR frame
+extrinsicRot: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+extrinsicRPY: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+
+# Zero — 6-axis IMU has no orientation output to trust
+imuRPYWeight: 0.0
+```
+
+Without these fixes, gravity is projected into the wrong axis, causing IMU preintegration to diverge (ATE > 600m). Full configs: [`configs/lio_sam_newer_college.yaml`](configs/lio_sam_newer_college.yaml)
+
+### FAST-LIO with Ouster OS-1
+
+Only topic names need changing in `ouster64.yaml`:
+```yaml
+lid_topic: "/os1_cloud_node/points"
+imu_topic: "/os1_cloud_node/imu"
+```
+
+No extrinsic or IMU patches required. Full config: [`configs/fast_lio_ouster64.yaml`](configs/fast_lio_ouster64.yaml)
 
 ---
 

@@ -1,0 +1,18 @@
+diff --git a/include/lio_sam/utility.hpp b/include/lio_sam/utility.hpp
+index 60e7b88..7ef09a3 100644
+--- a/include/lio_sam/utility.hpp
++++ b/include/lio_sam/utility.hpp
+@@ -336,8 +336,11 @@ public:
+ 
+         if (sqrt(q_final.x()*q_final.x() + q_final.y()*q_final.y() + q_final.z()*q_final.z() + q_final.w()*q_final.w()) < 0.1)
+         {
+-            RCLCPP_ERROR(get_logger(), "Invalid quaternion, please use a 9-axis IMU!");
+-            rclcpp::shutdown();
++            // 6-axis IMU fallback: use identity orientation
++            imu_out.orientation.x = 0.0;
++            imu_out.orientation.y = 0.0;
++            imu_out.orientation.z = 0.0;
++            imu_out.orientation.w = 1.0;
+         }
+ 
+         return imu_out;

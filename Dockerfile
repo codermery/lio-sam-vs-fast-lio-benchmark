@@ -53,6 +53,8 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc \
     && echo '[ -f /ros2_ws/install/setup.bash ] && source /ros2_ws/install/setup.bash' >> /root/.bashrc
 
 COPY setup_workspace.sh /ros2_ws/setup_workspace.sh
-RUN chmod +x /ros2_ws/setup_workspace.sh
+COPY ros_entrypoint.sh /ros2_ws/ros_entrypoint.sh
+RUN chmod +x /ros2_ws/setup_workspace.sh /ros2_ws/ros_entrypoint.sh
 
+ENTRYPOINT ["/ros2_ws/ros_entrypoint.sh"]
 CMD ["/bin/bash"]

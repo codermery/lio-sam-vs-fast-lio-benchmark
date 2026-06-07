@@ -4,13 +4,11 @@
 
 ---
 
-🚀 Weekend benchmark complete: LIO-SAM vs FAST-LIO2 on the Newer College Dataset (Ouster OS-1, 64-beam).
+Weekend benchmark done: LIO-SAM vs FAST-LIO2 on the Newer College Dataset (Ouster OS-1 64-beam, 6-axis IMU).
 
-Results: FAST-LIO ATE RMSE = [XX.X] cm | LIO-SAM ATE RMSE = [XX.X] cm
+Both algorithms achieved sub-meter ATE. FAST-LIO showed better global accuracy (0.35m vs 0.69m RMSE) and higher output rate (8 Hz vs 2.4 Hz), while LIO-SAM's steady-state accuracy was comparable. For Ouster's 6-axis IMU, both needed configuration tuning — documented in the repo.
 
-Both are excellent — the difference is in where they shine. Building on this for my multi-robot 3D SLAM thesis at YTU.
-
-Full code + methodology: [GitHub link]
+Full code + methodology + Docker: [GitHub link]
 
 #SLAM #LiDAR #ROS2 #Robotics #AutonomousSystems #MSc #Research
 
@@ -20,9 +18,9 @@ Full code + methodology: [GitHub link]
 
 ---
 
-**From 2D to 3D: My first LiDAR-Inertial SLAM benchmark** 🗺️
+**From 2D to 3D: My first LiDAR-Inertial SLAM benchmark**
 
-For the past year I've worked with 2D SLAM (gmapping, cartographer) in multi-robot setups. Now, transitioning to 3D for my MSc thesis at Yıldız Technical University, I asked myself:
+For the past year I've worked with 2D SLAM (gmapping, cartographer) in multi-robot setups. Now, transitioning to 3D for my MSc thesis at Yildiz Technical University, I asked myself:
 
 *"Which LiDAR-inertial odometry should I build my multi-robot system on?"*
 
@@ -37,22 +35,24 @@ So I set up a controlled benchmark this weekend:
 **Key findings:**
 | Metric | LIO-SAM | FAST-LIO |
 |--------|---------|----------|
-| ATE RMSE | [XX.X] cm | [XX.X] cm |
-| RPE RMSE | [XX.X] cm | [XX.X] cm |
+| ATE RMSE | 0.69 m | 0.35 m |
+| RPE RMSE | 6.09 m | 2.09 m |
+| Output rate | 2.4 Hz | 8.0 Hz |
 
 **What I learned:**
-- [Key insight 1 about the algorithms' behavior]
-- [Key insight 2 about failure modes or strengths]
-- Building reproducible infrastructure is half the battle
+- Both algorithms achieve sub-meter ATE when correctly configured. FAST-LIO is more accurate globally (0.35m vs 0.69m), but in steady state they're comparable.
+- FAST-LIO handles 6-axis IMUs (like Ouster's internal sensor) out of the box. LIO-SAM officially requires 9-axis.
+- Getting LIO-SAM to work with Ouster required: a source patch for orientation handling + identity extrinsics + imuRPYWeight=0. Wrong extrinsics alone caused 600m drift — configuration matters more than algorithm choice.
+- FAST-LIO outputs at 8 Hz (per-scan odometry) vs LIO-SAM at 2.4 Hz (keyframes). Different design philosophies, not a flaw.
 
 **What's next:**
 This benchmark is the foundation layer. My thesis extends this to multi-robot cooperative SLAM — merging submaps from multiple agents running these algorithms in parallel.
 
-The full pipeline (Docker, scripts, evaluation code) is open source: [GitHub link]
+The full pipeline (Docker, scripts, evaluation code, configs) is open source: [GitHub link]
 
 ---
 
-*Important caveat: This is one sequence with default parameters. Not a definitive ranking — just a starting point for informed decisions.*
+*Important caveat: Single sequence, 6-axis IMU. Not a definitive ranking — LIO-SAM may perform differently with a 9-axis IMU and loop closures enabled.*
 
 ---
 

@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import copy
 import os
 import sys
 
@@ -36,7 +37,7 @@ def compute_ate(ref: PoseTrajectory3D, est: PoseTrajectory3D):
     """Compute Absolute Trajectory Error (APE, translation part)."""
     ref_sync, est_sync = sync.associate_trajectories(ref, est)
 
-    est_aligned = est_sync.copy()
+    est_aligned = copy.deepcopy(est_sync)
     est_aligned.align(ref_sync, correct_scale=False)
 
     ape_metric = metrics.APE(PoseRelation.translation_part)
@@ -45,17 +46,17 @@ def compute_ate(ref: PoseTrajectory3D, est: PoseTrajectory3D):
     return ape_metric, ref_sync, est_aligned
 
 
-def compute_rpe(ref: PoseTrajectory3D, est: PoseTrajectory3D, delta: float = 1.0):
+def compute_rpe(ref: PoseTrajectory3D, est: PoseTrajectory3D, delta: int = 10):
     """Compute Relative Pose Error (translation, delta=1.0s)."""
     ref_sync, est_sync = sync.associate_trajectories(ref, est)
 
-    est_aligned = est_sync.copy()
+    est_aligned = copy.deepcopy(est_sync)
     est_aligned.align(ref_sync, correct_scale=False)
 
     rpe_metric = metrics.RPE(
         PoseRelation.translation_part,
         delta=delta,
-        delta_unit=Unit.seconds,
+        delta_unit=Unit.frames,
         all_pairs=False
     )
     rpe_metric.process_data((ref_sync, est_aligned))
@@ -168,9 +169,9 @@ def main():
     fl_ape, gt_sync_fl, fl_aligned = compute_ate(gt_traj, fl_traj)
 
     # RPE (translation, delta=1.0s)
-    print("[evaluate] Computing RPE (delta=1.0s)...")
-    ls_rpe = compute_rpe(gt_traj, ls_traj, delta=1.0)
-    fl_rpe = compute_rpe(gt_traj, fl_traj, delta=1.0)
+    print("[evaluate] Computing RPE (delta=10 frames)...")
+    ls_rpe = compute_rpe(gt_traj, ls_traj, delta=10)
+    fl_rpe = compute_rpe(gt_traj, fl_traj, delta=10)
 
     # Plots
     print("[evaluate] Generating plots...")
@@ -205,7 +206,7 @@ def main():
         f.write("**Dataset:** Newer College - short_experiment (Ouster OS-1 64-beam)\n\n")
         f.write(df.to_markdown(index=False))
         f.write("\n\n*Alignment: SE(3) Umeyama, correct_scale=False*\n")
-        f.write("*RPE delta: 1.0 seconds*\n")
+        f.write("*RPE delta: 10 frames*\n")
     print(f"[evaluate] Saved Markdown: {md_path}")
 
 
