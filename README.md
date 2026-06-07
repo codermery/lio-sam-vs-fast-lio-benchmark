@@ -58,28 +58,49 @@ SLAM systems are notoriously hard to reproduce. LIO-SAM requires GTSAM 4.1 (not 
 ## Quick Start
 
 ```bash
-# 1. Build the Docker image
+# Clone the repo
+git clone https://github.com/codermery/lio-sam-vs-fast-lio-benchmark.git
+cd lio-sam-vs-fast-lio-benchmark
+
+# Option A: Run everything automatically (~1 hour, downloads 44 GB)
+bash run_all.sh
+
+# Option B: Step by step
+# 1. Download dataset (~44 GB)
+bash scripts/download_newer_college.sh
+
+# 2. Convert ROS1 bags to ROS2
+bash scripts/convert_bags.sh
+
+# 3. Convert ground truth to TUM format
+python3 scripts/csv_to_tum.py \
+    data/newer_college/01_short_experiment/ground_truth/registered_poses.csv \
+    results/ground_truth.tum
+
+# 4. Build Docker image (~10 min)
 docker build -t lio-benchmark .
 
-# 2. Run the container
-docker run -it --gpus all --network host \
-    -e DISPLAY=$DISPLAY \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
+# 5. Run container and build workspace
+docker run -it --network host \
+    --name lio-benchmark \
     -v $(pwd):/ros2_ws/host \
-    -v $(pwd)/data:/ros2_ws/data \
+    -v $(pwd)/data/newer_college/01_short_experiment:/ros2_ws/data \
     -v $(pwd)/results:/ros2_ws/results \
-    --name lio-benchmark lio-benchmark
+    lio-benchmark
 
-# 3. Inside the container, build the workspace
-./setup_workspace.sh
+# Inside the container:
+./setup_workspace.sh   # clones + builds LIO-SAM and FAST-LIO (~10 min)
 
-# 4. Run algorithms (after placing converted bag in /ros2_ws/data/)
-./host/scripts/run_lio_sam.sh /ros2_ws/data/01_short_experiment /ros2_ws/results
-./host/scripts/run_fast_lio.sh /ros2_ws/data/01_short_experiment /ros2_ws/results
+# 6. Run algorithms
+bash /ros2_ws/host/scripts/run_lio_sam.sh \
+    --bag /ros2_ws/data/ros2_bags/rooster_2020-03-10-10-36-30_0
 
-# 5. Evaluate
+bash /ros2_ws/host/scripts/run_fast_lio.sh \
+    --bag /ros2_ws/data/ros2_bags/rooster_2020-03-10-10-36-30_0
+
+# 7. Evaluate
 python3 /ros2_ws/host/scripts/evaluate.py \
-    --gt /ros2_ws/data/groundtruth_tum.txt \
+    --gt /ros2_ws/results/ground_truth.tum \
     --lio-sam /ros2_ws/results/lio_sam_trajectory.tum \
     --fast-lio /ros2_ws/results/fast_lio_trajectory.tum \
     --output-dir /ros2_ws/results/
