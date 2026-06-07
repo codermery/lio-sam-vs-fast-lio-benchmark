@@ -1,5 +1,7 @@
 # LIO-SAM vs FAST-LIO Benchmark
 
+[![Docker Build](https://github.com/codermery/lio-sam-vs-fast-lio-benchmark/actions/workflows/docker-build.yml/badge.svg)](https://github.com/codermery/lio-sam-vs-fast-lio-benchmark/actions/workflows/docker-build.yml)
+
 **A weekend benchmarking study comparing LIO-SAM and FAST-LIO2 on the Newer College Dataset.**
 
 > This is a foundation experiment for my upcoming MSc thesis on 3D multi-robot SLAM at Yıldız Technical University. It is **not** a definitive ranking — just a controlled comparison on one sequence to build intuition and infrastructure.
