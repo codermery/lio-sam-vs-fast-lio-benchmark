@@ -8,6 +8,18 @@
 
 ---
 
+## Motivation
+
+**Why these two algorithms?** Both LIO-SAM (Shan et al., 2020) and FAST-LIO2 (Xu et al., 2022) are the most-cited open-source LiDAR-inertial odometry systems. They represent two philosophically opposite approaches: factor-graph batch optimization (LIO-SAM, with GTSAM backend and loop closure) vs incremental Kalman filtering with ikd-Tree (FAST-LIO2). Choosing between them — or understanding when one beats the other — is a decision every 3D SLAM project faces.
+
+**Why does this matter for my thesis?** My MSc research at YTU is on multi-robot collaborative mapping. My 2D work is already submitted (under review at RASE journal). I'm extending to 3D LiDAR-based collaborative SLAM, and the single-robot LIO backbone is the foundation of any multi-robot system. Reading papers alone doesn't build the practical intuition — running them on my own hardware does.
+
+**Why Newer College Dataset?** It's the de-facto handheld LiDAR-IMU benchmark in modern SLAM literature. Oxford ORI provides survey-grade ground truth (ICP-registered against a known map), Ouster OS-1 64-beam is a sensor I'll likely use in future work, and the trajectory is short enough (~110m) for fast iteration but complex enough to differentiate algorithms.
+
+**What I'm explicitly NOT claiming:** This is not a definitive ranking. Both algorithms have been tested by their authors on many datasets. This is one researcher's controlled comparison on one sequence, documented for reproducibility.
+
+---
+
 ## Results
 
 | Algorithm | ATE RMSE [m] | ATE Mean [m] | ATE Max [m] | RPE RMSE [m] | RPE Mean [m] |
@@ -34,6 +46,12 @@ ATE plot shows LIO-SAM with a constant ~1.3m offset in the early trajectory due 
 
 ![ATE Comparison](results/ate_comparison.png)
 </details>
+
+---
+
+## Why Docker?
+
+SLAM systems are notoriously hard to reproduce. LIO-SAM requires GTSAM 4.1 (not 4.0, not 4.2). FAST-LIO requires PCL with specific build flags. livox_ros_driver2 needs a specific Livox SDK version. Eigen, OpenCV, ROS2 versions all interact subtly. A typical "setup from source" pass takes 4-8 hours on a fresh machine and breaks again when any system package updates. By containerizing the environment, this benchmark is reproducible in ~15 minutes: clone the repo, `docker build`, `docker run`. This is also why the LIO-SAM 6-axis IMU patch and the parameter fixes are part of the repo — they're embedded in the reproducible setup, not scattered manual steps.
 
 ---
 
@@ -89,6 +107,18 @@ python3 /ros2_ws/host/scripts/evaluate.py \
 4. **Platform:**
    - Docker container with ROS2 Humble
    - Single-threaded bag playback (real-time factor = 1.0)
+
+---
+
+## Choices and Trade-offs
+
+- **Single sequence (01_short_experiment, ~3 minutes of data):** Newer College's full bag is split into 10 files (~110 GB total). I downloaded 4 bags (~11 minutes of data) which is sufficient for ATE/RPE evaluation. Many published LIO benchmarks use ~60-180 second sequences; we have more data than that.
+
+- **CPU-only execution:** LIO-SAM and FAST-LIO are both CPU-bound. GPU helps only for RViz visualization. Running on a Vast.ai instance with RTX 4090 was about cloud bandwidth and disk, not GPU compute.
+
+- **LIO-SAM 6-axis patch instead of switching algorithms:** Newer College uses Ouster's internal 6-axis IMU. LIO-SAM officially requires a 9-axis IMU. The community workaround (identity quaternion fallback + imuRPYWeight=0) is documented in [`docs/PATCHES.md`](docs/PATCHES.md). I chose this over excluding LIO-SAM because the goal was to compare two real systems side-by-side, with full transparency about what tuning was required.
+
+- **Default parameters elsewhere:** Both algorithms have many tunable parameters. I tuned only what was strictly required for the dataset's sensor configuration. Aggressive parameter tuning per-algorithm would bias the comparison; defaults give a fair "what does an honest first pass look like" baseline.
 
 ---
 
