@@ -1,0 +1,29 @@
+# Data & Build artifacts
+data/
+!data/.gitkeep
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# ROS bag files
+*.bag
+*.db3
+*.mcap
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large files
+*.pcd
+*.ply
