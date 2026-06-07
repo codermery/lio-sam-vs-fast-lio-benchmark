@@ -22,6 +22,9 @@
 
 ---
 
+![Trajectory XY](results/demo.gif)
+</details>
+
 ## Results
 
 | Algorithm | ATE RMSE [m] | ATE Mean [m] | ATE Max [m] | RPE RMSE [m] | RPE Mean [m] |
